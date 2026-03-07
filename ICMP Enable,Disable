@@ -1,0 +1,27 @@
+#신규 inbound ping 허용 정책 생성(정책명 : ICMP Allow)
+
+  netsh advfirewall firewall add rule name="ICMP Allow" protocol=icmpv4:8,any dir=in action=allow
+
+#신규 inbound ping 허용 정책 삭제(정책명 : ICMP Allow)
+
+  netsh advfirewall firewall delete rule name="ICMP Allow" protocol=icmpv4:8,any dir=in
+
+​
+
+#기존 inbound ping 정책 허용모드 수정(정책명 : 파일 및 프린터 공유(에코 요청 - ICMPv4-In))
+
+  netsh advfirewall firewall set rule dir=in name="파일 및 프린터 공유(에코 요청 - ICMPv4-In)" new enable=yes
+
+#기존 inbound ping 정책 차단모드 수정(정책명 : 파일 및 프린터 공유(에코 요청 - ICMPv4-In))
+
+  netsh advfirewall firewall set rule dir=in name="파일 및 프린터 공유(에코 요청 - ICMPv4-In)" new enable=no
+
+​
+
+#기존 inbound ping 정책 허용모드 수정(정책명 : 네트워킹 - 반향 요청(ICMPv4-In))
+
+  netsh firewall set icmpsetting 8 enable
+
+#기존 inbound ping 정책 차단모드 수정(정책명 : 네트워킹 - 반향 요청(ICMPv4-In))
+
+  netsh firewall set icmpsetting 8 disable
