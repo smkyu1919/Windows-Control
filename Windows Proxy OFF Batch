@@ -1,0 +1,9 @@
+@echo off
+:: disabled Proxy URL & Port Setting
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 0 /f
+
+:: Set IE Setting in Option
+rundll32.exe inetcpl.cpl,ClearMyTracksByProcess 255
+
+echo ""Proxy OFF"": %PROXY%
+timeout /t 1 >nul
