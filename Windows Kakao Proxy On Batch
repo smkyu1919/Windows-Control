@@ -1,0 +1,60 @@
+@echo off
+chcp 65001 >nul
+setlocal enabledelayedexpansion
+
+set "INI_PATH=%LOCALAPPDATA%\Kakao\KakaoTalk\pref.ini"
+set "TEMP_FILE=%TEMP%\pref_modified.ini"
+
+echo [INFO] 카카오톡 프록시 설정 추가 중...
+
+if not exist "%INI_PATH%" (
+    echo [WARN] 설정 파일이 없어 새로 만듭니다.
+    (
+        echo use_proxy = yes
+        echo proxy_host = 'PROXY IP'
+        echo proxy_port = 'PROXY PORT'
+    ) > "%INI_PATH%"
+    goto :done
+)
+
+REM 존재할 경우: 기존 라인 수정 또는 추가
+REM 기존 use_proxy / proxy_host / proxy_port 항목 덮어쓰기, 없으면 추가
+
+set "found_use_proxy=0"
+set "found_proxy_host=0"
+set "found_proxy_port=0"
+
+type nul > "%TEMP_FILE%"
+
+for /f "usebackq delims=" %%L in ("%INI_PATH%") do (
+    set "line=%%L"
+    setlocal enabledelayedexpansion
+
+    if "!line!"=="use_proxy = yes" (
+        set "found_use_proxy=1"
+        echo use_proxy = yes>>"%TEMP_FILE%"
+    ) else if "!line!"=="proxy_host = 'PROXY IP'" (
+        set "found_proxy_host=1"
+        echo proxy_host = 'PROXY IP'>>"%TEMP_FILE%"
+    ) else if "!line!"=="proxy_port = 'PROXY PORT'" (
+        set "found_proxy_port=1"
+        echo proxy_port = 'PROXY PORT'>>"%TEMP_FILE%"
+    ) else (
+        echo !line!>>"%TEMP_FILE%"
+    )
+
+    endlocal
+)
+
+REM 필요한 항목이 없으면 추가
+if "%found_use_proxy%"=="0" echo use_proxy = yes>>"%TEMP_FILE%"
+if "%found_proxy_host%"=="0" echo proxy_host = 'PROXY IP'>>"%TEMP_FILE%"
+if "%found_proxy_port%"=="0" echo proxy_port = 'PROXY PORT'>>"%TEMP_FILE%"
+
+move /y "%TEMP_FILE%" "%INI_PATH%" >nul
+
+:done
+echo [OK] 설정 완료: %INI_PATH%
+timeout /t 1 >nul
+endlocal
+exit /b
