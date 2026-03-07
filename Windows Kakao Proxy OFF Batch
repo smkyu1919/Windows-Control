@@ -1,0 +1,42 @@
+@echo off
+chcp 65001 >nul
+setlocal enabledelayedexpansion
+
+set "INI_PATH=%LOCALAPPDATA%\Kakao\KakaoTalk\pref.ini"
+set "TEMP_FILE=%TEMP%\pref_cleaned.ini"
+
+echo [INFO] 카카오톡 프록시 설정 행 삭제 중...
+
+if not exist "%INI_PATH%" (
+    echo [WARN] 설정 파일이 존재하지 않습니다: %INI_PATH%
+    timeout /t 2 >nul
+    endlocal
+    exit /b
+)
+
+REM 출력 파일 초기화
+type nul > "%TEMP_FILE%"
+
+for /f "usebackq delims=" %%L in ("%INI_PATH%") do (
+    set "line=%%L"
+    setlocal enabledelayedexpansion
+
+    set "skip_line=0"
+
+    if "!line!"=="use_proxy = yes" set "skip_line=1"
+    if "!line!"=="proxy_host = 'PROXY_IP'" set "skip_line=1"
+    if "!line!"=="proxy_port = 'PROXY_PORT" set "skip_line=1"
+
+    if !skip_line! == 0 (
+        >>"%TEMP_FILE%" echo(!line!
+    )
+
+    endlocal
+)
+
+move /y "%TEMP_FILE%" "%INI_PATH%" >nul
+echo [OK] 삭제 완료: %INI_PATH%
+
+timeout /t 1 >nul
+endlocal
+exit /b
