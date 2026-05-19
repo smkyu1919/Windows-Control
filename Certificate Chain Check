@@ -1,0 +1,67 @@
+$Targets = @(
+    "ssm.ap-northeast-2.amazonaws.com",
+    "ssmmessages.ap-northeast-2.amazonaws.com",
+    "ec2messages.ap-northeast-2.amazonaws.com"
+)
+
+foreach ($TargetHost in $Targets) {
+    Write-Host ""
+    Write-Host "===== $TargetHost ====="
+
+    $RemoteCert = $null
+    $Tcp = New-Object System.Net.Sockets.TcpClient
+
+    try {
+        $Tcp.Connect($TargetHost, 443)
+
+        $Callback = {
+            param($sender, $certificate, $chain, $sslPolicyErrors)
+            $script:RemoteCert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certificate)
+            return $true
+        }
+
+        $Ssl = New-Object System.Net.Security.SslStream($Tcp.GetStream(), $false, $Callback)
+
+        $Ssl.AuthenticateAsClient(
+            $TargetHost,
+            $null,
+            [System.Security.Authentication.SslProtocols]::Tls12,
+            $false
+        )
+
+        if ($RemoteCert -eq $null) {
+            Write-Host "Certificate : NULL"
+            continue
+        }
+
+        Write-Host "Subject : $($RemoteCert.Subject)"
+        Write-Host "Issuer  : $($RemoteCert.Issuer)"
+        Write-Host "NotBefore : $($RemoteCert.NotBefore)"
+        Write-Host "NotAfter  : $($RemoteCert.NotAfter)"
+
+        $Chain = New-Object System.Security.Cryptography.X509Certificates.X509Chain
+        $Chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::NoCheck
+
+        $ChainOK = $Chain.Build($RemoteCert)
+        Write-Host "ChainOK : $ChainOK"
+
+        foreach ($Status in $Chain.ChainStatus) {
+            Write-Host "Status : $($Status.Status)"
+            Write-Host "Info   : $($Status.StatusInformation)"
+        }
+
+        Write-Host "----- Chain Elements -----"
+
+        foreach ($Element in $Chain.ChainElements) {
+            Write-Host "Subject : $($Element.Certificate.Subject)"
+            Write-Host "Issuer  : $($Element.Certificate.Issuer)"
+        }
+    }
+    catch {
+        Write-Host "ERROR : $($_.Exception.Message)"
+    }
+    finally {
+        if ($Ssl) { $Ssl.Close() }
+        if ($Tcp) { $Tcp.Close() }
+    }
+}
